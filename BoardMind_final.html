@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BoardMind — Interactive Prototype</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#F8FAFC;min-height:100vh;display:flex;flex-direction:column}
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* Top bar */
+.topbar{background:#0F1B2D;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #0D9488;flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:8px}
+.topbar-left .bb{color:#64748B;font-size:11px}
+.course-btn{background:none;border:1px solid rgba(100,116,139,0.3);border-radius:6px;padding:3px 10px;cursor:pointer;display:flex;align-items:center;gap:6px;position:relative}
+.course-btn .dot{width:8px;height:8px;border-radius:50%;background:#0D9488}
+.course-btn .name{color:#fff;font-size:11px;font-weight:600}
+.course-btn .arr{color:#64748B;font-size:9px}
+.course-menu{position:absolute;top:28px;left:0;background:#fff;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);width:220px;z-index:50;overflow:hidden;display:none}
+.course-menu.open{display:block}
+.course-opt{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border:none;background:#fff;cursor:pointer;text-align:left;border-bottom:1px solid #E2E8F0;font-family:inherit}
+.course-opt:hover{background:#F8FAFC}
+.course-opt.active{background:#E6FFFA}
+.course-opt .dot{width:9px;height:9px;border-radius:50%}
+.course-opt .info{flex:1}
+.course-opt .cname{font-size:11px;font-weight:600;color:#1E293B}
+.course-opt .ccode{font-size:9px;color:#64748B}
+.course-opt .ck{color:#0D9488;font-size:12px;margin-left:auto;display:none}
+.course-opt.active .ck{display:block}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.mode-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px}
+.avatar{width:24px;height:24px;border-radius:50%;background:#0D9488;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700}
+
+/* Layout */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:155px;background:#1A2744;padding:12px 0;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-logo{padding:0 12px 12px;display:flex;align-items:center;gap:7px;border-bottom:1px solid #0F1B2D;margin-bottom:6px}
+.sidebar-logo span{color:#fff;font-size:12px;font-weight:700}
+.nav-btn{display:flex;align-items:center;gap:8px;padding:8px 12px;background:none;border:none;cursor:pointer;width:100%;text-align:left;border-left:3px solid transparent;font-family:inherit}
+.nav-btn.active{background:#0F1B2D;border-left-color:#0D9488}
+.nav-btn .icon{font-size:12px}
+.nav-btn .lbl{font-size:10px;color:#64748B;font-weight:400}
+.nav-btn.active .lbl{color:#14B8A6;font-weight:600}
+.mode-section{margin-top:auto;padding:8px 12px;border-top:1px solid #0F1B2D}
+.mode-section .title{font-size:7px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.mode-btn{display:block;width:100%;padding:3px 6px;margin-bottom:2px;border-radius:3px;border:1px solid transparent;background:none;color:#64748B;font-size:9px;cursor:pointer;text-align:left;font-family:inherit}
+.mode-btn.active{font-weight:600}
+
+/* Content */
+.content{flex:1;padding:16px;overflow-y:auto}
+
+/* Cards */
+.card{background:#fff;border-radius:8px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);margin-bottom:12px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.card h3{font-size:12px;font-weight:600;color:#1E293B}
+.tag{font-size:8px;padding:2px 6px;border-radius:3px;font-weight:600}
+.tag-red{background:#FEE2E2;color:#EF4444}
+.tag-teal{background:#E6FFFA;color:#0D9488}
+.tag-amber{background:#FEF3C7;color:#F59E0B}
+.tag-green{background:#D1FAE5;color:#10B981}
+.source-tag{font-size:8px;color:#0D9488;background:#E6FFFA;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:6px}
+.card p{font-size:10px;color:#1E293B;line-height:1.5;margin-bottom:4px}
+.card .sub{font-size:10px;color:#64748B}
+
+/* Progress bars */
+.bar-row{margin-bottom:7px}
+.bar-label{display:flex;justify-content:space-between;margin-bottom:3px}
+.bar-name{font-size:10px;color:#1E293B;font-weight:500}
+.bar-bg{height:8px;background:#E2E8F0;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.8s ease}
+
+/* Support buttons */
+.support-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.sup-btn{padding:4px 8px;border-radius:5px;border:1px solid rgba(13,148,136,0.2);font-size:9px;cursor:pointer;font-weight:500;font-family:inherit;display:flex;align-items:center;gap:3px}
+
+/* Streak heatmap */
+.streak-grid{display:flex;gap:2px;align-items:flex-start}
+.streak-labels{display:flex;flex-direction:column;gap:2px;margin-right:3px}
+.streak-labels div{height:10px;font-size:7px;color:#64748B;display:flex;align-items:center}
+.streak-col{display:flex;flex-direction:column;gap:2px}
+.streak-cell{width:10px;height:10px;border-radius:2px}
+.streak-legend{display:flex;align-items:center;gap:3px;justify-content:flex-end;margin-top:5px}
+.streak-legend span{font-size:7px;color:#64748B}
+.streak-legend .sq{width:8px;height:8px;border-radius:2px}
+
+/* Upload zone */
+.upload-zone{border:2px dashed #E2E8F0;border-radius:8px;padding:18px;text-align:center;cursor:pointer;margin-bottom:12px;transition:border-color 0.15s}
+.upload-zone:hover{border-color:#0D9488}
+.upload-icon{font-size:22px;margin-bottom:5px}
+.file-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.chip{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:2px 8px;font-size:9px;color:#64748B}
+
+/* Course tabs */
+.course-tabs{display:flex;border-bottom:1px solid #E2E8F0;margin-bottom:12px}
+.ctab{flex:1;padding:7px 4px;border:none;background:none;border-bottom:2px solid transparent;font-size:9px;cursor:pointer;font-family:inherit;color:#64748B}
+.ctab.active{font-weight:700;border-bottom-color:#0D9488;color:#0D9488}
+
+/* Chat */
+.chat-area{background:#F8FAFC;border-radius:8px;padding:10px;border:1px solid #E2E8F0;min-height:200px;max-height:350px;overflow-y:auto;margin-bottom:8px}
+.msg{display:flex;margin-bottom:10px}
+.msg.user{justify-content:flex-end}
+.msg.ai{justify-content:flex-start}
+.bubble{max-width:80%;padding:8px 12px;font-size:11px;line-height:1.5;box-shadow:0 1px 2px rgba(0,0,0,0.05);white-space:pre-line}
+.msg.user .bubble{background:#1A2744;color:#fff;border-radius:12px 4px 12px 12px}
+.msg.ai .bubble{background:#fff;color:#1E293B;border-radius:4px 12px 12px 12px}
+.chat-input{display:flex;gap:5px}
+.chat-input input{flex:1;padding:7px 10px;border-radius:7px;border:1px solid #E2E8F0;font-size:10px;font-family:inherit;color:#64748B}
+.chat-input button{padding:6px 12px;border-radius:7px;background:#0D9488;color:#fff;border:none;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* Readiness circle */
+.readiness{text-align:center}
+
+/* Modal overlay */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,27,45,0.6);z-index:90;display:flex;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:12px;width:400px;max-width:90vw;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.2);animation:fadeIn 0.3s ease;max-height:80vh;overflow-y:auto}
+.modal h2{font-size:16px;font-weight:700;color:#1E293B;margin-bottom:4px}
+.modal h3{font-size:14px;font-weight:700;color:#1E293B;margin-bottom:8px}
+.modal p{font-size:11px;color:#64748B;margin-bottom:12px;line-height:1.5}
+.pref-btn{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;margin-bottom:4px;border-radius:6px;cursor:pointer;text-align:left;font-family:inherit;transition:all 0.15s}
+.pref-btn .emoji{font-size:15px}
+.pref-btn .pname{font-size:11px;font-weight:600;color:#1E293B}
+.pref-btn .check{width:16px;height:16px;border-radius:3px;border:2px solid #E2E8F0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-left:auto;color:#fff}
+.pref-btn.on{border-color:#0D9488;background:#E6FFFA}
+.pref-btn.on .check{background:#0D9488;border-color:#0D9488}
+.pref-btn.off{border:1.5px solid #E2E8F0;background:#fff}
+.pref-btn.off .check{background:transparent}
+.start-btn{width:100%;padding:9px;border-radius:7px;background:#0D9488;color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;margin-top:8px;font-family:inherit}
+.close-btn{width:100%;padding:7px;border-radius:6px;background:#F8FAFC;border:1px solid #E2E8F0;font-size:10px;color:#64748B;cursor:pointer;margin-top:10px;font-family:inherit}
+.content-box{background:#F8FAFC;border-radius:8px;padding:12px;font-size:12px;color:#1E293B;line-height:1.7;white-space:pre-line}
+.audio-box{background:#F8FAFC;border-radius:8px;padding:20px;text-align:center}
+.play-btn{width:32px;height:32px;border-radius:50%;background:#0D9488;border:none;color:#fff;font-size:14px;cursor:pointer}
+
+/* Privacy box */
+.privacy-box{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:7px;padding:9px}
+.privacy-box .title{font-size:8px;font-weight:700;color:#1D4ED8;letter-spacing:0.5px}
+.privacy-box .text{font-size:9px;color:#1E40AF;line-height:1.5;margin-top:2px}
+
+/* Alerts */
+.alert-item{background:#fff;border-radius:7px;padding:9px;margin-bottom:6px;box-shadow:0 1px 2px rgba(0,0,0,0.04);display:flex;gap:8px}
+.alert-item .icon{font-size:15px}
+.alert-item .title{font-size:11px;font-weight:600;color:#1E293B}
+.alert-item .time{font-size:8px;color:#64748B}
+.alert-item p{font-size:10px;color:#64748B;margin-top:2px}
+
+.hidden{display:none}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- SETUP MODAL -->
+  <div class="modal-overlay" id="setup-modal">
+    <div class="modal">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="font-size:20px">🧠</span>
+        <h2>Welcome to BoardMind</h2>
+      </div>
+      <p>How would you like to receive learning support?</p>
+      <div class="pref-btn on" onclick="togglePref(this,'simpler')" data-pref="simpler">
+        <span class="emoji">🗣</span><span class="pname">Simpler English</span><div class="check">✓</div>
+      </div>
+      <div class="pref-btn on" onclick="togglePref(this,'translate')" data-pref="translate">
+        <span class="emoji">🌐</span><span class="pname">Translate key terms</span><div class="check">✓</div>
+      </div>
+      <div class="pref-btn off" onclick="togglePref(this,'audio')" data-pref="audio">
+        <span class="emoji">🔊</span><span class="pname">Audio recaps</span><div class="check"></div>
+      </div>
+      <div class="pref-btn on" onclick="togglePref(this,'visual')" data-pref="visual">
+        <span class="emoji">📊</span><span class="pname">Visual examples</span><div class="check">✓</div>
+      </div>
+      <button class="start-btn" onclick="closeSetup()">Start Learning →</button>
+      <p style="font-size:8px;text-align:center;margin-top:6px;margin-bottom:0">Change anytime in Settings • Privacy-safe</p>
+    </div>
+  </div>
+
+  <!-- SUPPORT MODALS -->
+  <div class="modal-overlay hidden" id="modal-simpler" onclick="closeModal('simpler')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between"><h3>Simpler Explanation — ANOVA</h3><button onclick="closeModal('simpler')" style="background:none;border:none;font-size:16px;color:#64748B;cursor:pointer">×</button></div>
+      <div class="source-tag">📘 Simplified from Lecture 7</div>
+      <div class="content-box">ANOVA asks one question: "Are any of these groups really different, or is it just random luck?"
+
+Instead of comparing every pair one by one, ANOVA checks all groups at once.
+
+If the answer is yes → investigate which groups differ.
+If no → the differences are probably just noise.
+
+Think of it like testing 4 classrooms at once instead of running 6 separate comparisons.</div>
+      <button class="close-btn" onclick="closeModal('simpler')">Close</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="modal-translate" onclick="closeModal('translate')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between"><h3>Key Terms — English → 中文</h3><button onclick="closeModal('translate')" style="background:none;border:none;font-size:16px;color:#64748B;cursor:pointer">×</button></div>
+      <div class="source-tag">📘 Terms from Lectures 6–7</div>
+      <div class="content-box">• Analysis of Variance → 方差分析 (fāngchā fēnxī)
+• F-statistic → F统计量 (F tǒngjìliàng)
+• Between-group variance → 组间方差 (zǔjiān fāngchā)
+• Within-group variance → 组内方差 (zǔnèi fāngchā)
+• Degrees of freedom → 自由度 (zìyóudù)
+• Null hypothesis → 零假设 (líng jiǎshè)
+• Significance level → 显著性水平 (xiǎnzhù xìng shuǐpíng)</div>
+      <button class="close-btn" onclick="closeModal('translate')">Close</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="modal-audio" onclick="closeModal('audio')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between"><h3>Audio Recap — 3 min</h3><button onclick="closeModal('audio')" style="background:none;border:none;font-size:16px;color:#64748B;cursor:pointer">×</button></div>
+      <div class="source-tag">📘 Generated from Lecture 7 slides</div>
+      <div class="audio-box">
+        <div style="font-size:30px">🎧</div>
+        <p style="font-size:12px;font-weight:600;color:#1E293B;margin-top:6px">ANOVA — Audio Recap</p>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px">
+          <button class="play-btn">▶</button>
+          <div style="width:150px;height:4px;background:#E2E8F0;border-radius:2px"></div>
+          <span style="font-size:9px;color:#64748B">0:00 / 3:12</span>
+        </div>
+      </div>
+      <button class="close-btn" onclick="closeModal('audio')">Close</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="modal-visual" onclick="closeModal('visual')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between"><h3>Visual Example — ANOVA</h3><button onclick="closeModal('visual')" style="background:none;border:none;font-size:16px;color:#64748B;cursor:pointer">×</button></div>
+      <div class="source-tag">📘 Based on Lecture 7, Slide 14</div>
+      <div style="background:#F8FAFC;border-radius:8px;padding:14px">
+        <svg width="100%" viewBox="0 0 380 140">
+          <rect width="380" height="140" rx="6" fill="#F8FAFC"/>
+          <rect x="15" y="15" width="78" height="28" rx="4" fill="#E6FFFA" stroke="#0D9488" stroke-width="1"/><text x="54" y="33" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="600">Group A</text>
+          <rect x="107" y="15" width="78" height="28" rx="4" fill="#E6FFFA" stroke="#0D9488" stroke-width="1"/><text x="146" y="33" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="600">Group B</text>
+          <rect x="199" y="15" width="78" height="28" rx="4" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1"/><text x="238" y="33" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="600">Group C</text>
+          <rect x="291" y="15" width="78" height="28" rx="4" fill="#E6FFFA" stroke="#0D9488" stroke-width="1"/><text x="330" y="33" text-anchor="middle" font-size="10" fill="#1E293B" font-weight="600">Group D</text>
+          <text x="190" y="62" text-anchor="middle" font-size="9" fill="#64748B">↓ Compare all groups simultaneously</text>
+          <rect x="90" y="72" width="200" height="26" rx="4" fill="#1A2744"/>
+          <text x="190" y="89" text-anchor="middle" font-size="10" fill="white" font-weight="600">F = 4.82, p = 0.006</text>
+          <text x="190" y="115" text-anchor="middle" font-size="9" fill="#10B981" font-weight="600">✓ Significant → post-hoc test next</text>
+          <text x="190" y="132" text-anchor="middle" font-size="8" fill="#64748B">Next step: find WHICH groups differ</text>
+        </svg>
+      </div>
+      <button class="close-btn" onclick="closeModal('visual')">Close</button>
+    </div>
+  </div>
+
+  <!-- TOP BAR -->
+  <div class="topbar" id="topbar">
+    <div class="topbar-left">
+      <span style="font-size:14px">📚</span>
+      <span class="bb">Blackboard ›</span>
+      <div class="course-btn" onclick="toggleCourseMenu()">
+        <div class="dot" id="course-dot"></div>
+        <span class="name" id="course-name">Engineering Statistics</span>
+        <span class="arr">▼</span>
+        <div class="course-menu" id="course-menu">
+          <button class="course-opt active" data-id="stat" onclick="switchCourse('stat',event)">
+            <div class="dot" style="background:#0D9488"></div>
+            <div class="info"><div class="cname">Engineering Statistics</div><div class="ccode">STAT 301 • Wk 7</div></div>
+            <span class="ck">✓</span>
+          </button>
+          <button class="course-opt" data-id="cs" onclick="switchCourse('cs',event)">
+            <div class="dot" style="background:#6366F1"></div>
+            <div class="info"><div class="cname">Data Structures</div><div class="ccode">CS 201 • Wk 9</div></div>
+            <span class="ck">✓</span>
+          </button>
+          <button class="course-opt" data-id="econ" onclick="switchCourse('econ',event)">
+            <div class="dot" style="background:#EC4899"></div>
+            <div class="info"><div class="cname">Microeconomics</div><div class="ccode">ECON 101 • Wk 7</div></div>
+            <span class="ck">✓</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="mode-badge" id="mode-badge" style="background:#E6FFFA;color:#0D9488">LEARNING</span>
+      <div class="avatar">Y</div>
+    </div>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="main">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="font-size:14px">🧠</span><span>BoardMind</span></div>
+      <button class="nav-btn active" data-tab="dash" onclick="switchTab('dash')"><span class="icon">📊</span><span class="lbl">Dashboard</span></button>
+      <button class="nav-btn" data-tab="tutor" onclick="switchTab('tutor')"><span class="icon">🤖</span><span class="lbl">AI Tutor</span></button>
+      <button class="nav-btn" data-tab="map" onclick="switchTab('map')"><span class="icon">🧠</span><span class="lbl">Knowledge</span></button>
+      <button class="nav-btn" data-tab="files" onclick="switchTab('files')"><span class="icon">📂</span><span class="lbl">Materials</span></button>
+      <button class="nav-btn" data-tab="alerts" onclick="switchTab('alerts')"><span class="icon">🔔</span><span class="lbl">Alerts</span></button>
+      <div class="mode-section">
+        <div class="title">Mode</div>
+        <button class="mode-btn active" style="color:#0D9488;border-color:#0D9488;background:rgba(13,148,136,0.08)" onclick="switchMode('learning',this)">Learning</button>
+        <button class="mode-btn" onclick="switchMode('review',this)">Review</button>
+        <button class="mode-btn" onclick="switchMode('practice',this)">Practice</button>
+      </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="content" id="content">
+      <!-- DASHBOARD -->
+      <div id="tab-dash" class="tab-content" style="animation:fadeIn 0.3s ease">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div>
+            <h1 style="font-size:17px;font-weight:700;color:#1E293B">Welcome back, Yifei</h1>
+            <p style="font-size:10px;color:#64748B;margin-top:2px" id="dash-course-info">Engineering Statistics • Week 7</p>
+          </div>
+          <div class="readiness">
+            <svg width="62" height="62" viewBox="0 0 62 62">
+              <circle cx="31" cy="31" r="24" fill="none" stroke="#E2E8F0" stroke-width="4"/>
+              <circle cx="31" cy="31" r="24" fill="none" stroke="#10B981" stroke-width="4" stroke-linecap="round" stroke-dasharray="150.8" id="readiness-ring" stroke-dashoffset="42.2" transform="rotate(-90 31 31)"/>
+              <text x="31" y="29" text-anchor="middle" font-size="14" font-weight="700" fill="#10B981" id="readiness-num">72%</text>
+              <text x="31" y="40" text-anchor="middle" font-size="6.5" fill="#64748B">Est. Ready</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Recovery Card -->
+        <div class="card" style="border-left:3px solid #EF4444" id="recovery-card">
+          <div class="card-header">
+            <span style="font-size:12px;font-weight:600;color:#1E293B">🎯 Today's Recovery Action</span>
+            <span class="tag tag-red">Gap detected</span>
+          </div>
+          <div class="source-tag" id="recovery-source">📘 Lecture 7 check • ANOVA interpretation</div>
+          <p id="recovery-text">Scored <strong style="color:#EF4444">1/4</strong> — heavily weighted on final. Quiz 3 in 4 days.</p>
+          <div class="support-row" id="support-buttons">
+            <button class="sup-btn" style="background:#E6FFFA;color:#0D9488" onclick="openModal('simpler')">🗣 Simpler</button>
+            <button class="sup-btn" style="background:#EEF2FF;color:#6366F1" onclick="openModal('translate')">🌐 Translate</button>
+            <button class="sup-btn" style="background:#D1FAE5;color:#10B981" onclick="openModal('visual')">📊 Visual</button>
+            <button class="sup-btn" style="background:#FEF3C7;color:#F59E0B" onclick="switchTab('tutor')">📝 Practice</button>
+          </div>
+        </div>
+
+        <!-- Streak -->
+        <div class="card" id="streak-card">
+          <div class="card-header">
+            <h3>Daily Check-in Streak</h3>
+            <div style="display:flex;gap:10px">
+              <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#0D9488">12</div><div style="font-size:7px;color:#64748B">day streak</div></div>
+              <div style="text-align:center"><div style="font-size:15px;font-weight:700;color:#1E293B">47</div><div style="font-size:7px;color:#64748B">total days</div></div>
+            </div>
+          </div>
+          <div class="streak-grid" id="streak-grid"></div>
+          <div class="streak-legend">
+            <span>Less</span>
+            <div class="sq" style="background:#E2E8F0"></div>
+            <div class="sq" style="background:#99F6E4"></div>
+            <div class="sq" style="background:#14B8A6"></div>
+            <div class="sq" style="background:#0D9488"></div>
+            <span>More</span>
+          </div>
+        </div>
+
+        <!-- Knowledge Map -->
+        <div class="card">
+          <h3 style="margin-bottom:8px">Knowledge Map</h3>
+          <div id="dash-topics"></div>
+        </div>
+      </div>
+
+      <!-- AI TUTOR -->
+      <div id="tab-tutor" class="tab-content hidden">
+        <h1 style="font-size:15px;font-weight:700;color:#1E293B" id="tutor-title">AI Tutor — STAT 301</h1>
+        <div style="padding:4px 7px;border-radius:4px;background:#E6FFFA;margin-top:4px;margin-bottom:8px;display:flex;align-items:center;gap:5px" id="tutor-mode-bar">
+          <div style="width:6px;height:6px;border-radius:50%;background:#0D9488;animation:pulse 2s infinite"></div>
+          <span style="font-size:9px;font-weight:600;color:#0D9488" id="tutor-mode-label">Learning</span>
+          <span style="font-size:8px;color:#64748B" id="tutor-mode-desc">— Explains concepts, won't give assignment answers</span>
+        </div>
+        <div class="chat-area" id="chat-area"></div>
+        <div class="chat-input">
+          <input type="text" placeholder="Ask about your course..." id="chat-input-field">
+          <button onclick="sendChat()">Send</button>
+        </div>
+        <p style="font-size:8px;color:#64748B;text-align:center;margin-top:4px">Switch modes in sidebar to see how AI behavior adapts</p>
+      </div>
+
+      <!-- KNOWLEDGE MAP -->
+      <div id="tab-map" class="tab-content hidden">
+        <h1 style="font-size:15px;font-weight:700;color:#1E293B" id="map-title">Knowledge Map — STAT 301</h1>
+        <p style="font-size:10px;color:#64748B;margin-bottom:10px">Based on comprehension checks</p>
+        <div id="map-topics"></div>
+      </div>
+
+      <!-- MATERIALS -->
+      <div id="tab-files" class="tab-content hidden">
+        <h1 style="font-size:15px;font-weight:700;color:#1E293B">Course Materials</h1>
+        <p style="font-size:10px;color:#64748B;margin-bottom:10px">Upload notes & slides — BoardMind uses them for better support</p>
+        <div class="course-tabs" id="file-course-tabs"></div>
+        <div class="upload-zone" onclick="simulateUpload()">
+          <div class="upload-icon">📎</div>
+          <div style="font-size:11px;font-weight:600;color:#64748B">Drop syllabus, notes, or slides</div>
+          <div style="font-size:9px;color:#64748B;margin-top:3px">PDF, PPTX, DOCX</div>
+        </div>
+        <div style="font-size:8px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px">Uploaded</div>
+        <div class="file-chips" id="file-chips"></div>
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:7px;padding:9px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><div style="font-size:8px;color:#64748B;font-weight:700">AUTO-SYNC</div><div style="font-size:10px;font-weight:600;color:#1E293B">Blackboard materials</div></div>
+          <span class="tag tag-teal">Connected</span>
+        </div>
+        <div class="privacy-box"><div class="title">PRIVACY</div><div class="text">Your materials are private. No professor sees uploads. FERPA compliant.</div></div>
+      </div>
+
+      <!-- ALERTS -->
+      <div id="tab-alerts" class="tab-content hidden">
+        <h1 style="font-size:15px;font-weight:700;color:#1E293B">Alerts</h1>
+        <p style="font-size:10px;color:#64748B;margin-bottom:10px">Support signals, not surveillance</p>
+        <div id="alerts-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:8px;font-size:10px;color:#94A3B8">BoardMind — JHPMC Product Hackathon 2026 • Syracuse University</div>
+
+<script>
+const courses = {
+  stat: { name:"Engineering Statistics", code:"STAT 301", week:7, color:"#0D9488",
+    topics:[{name:"Probability",pct:85,color:"#10B981"},{name:"Hypothesis Testing",pct:72,color:"#10B981"},{name:"Linear Regression",pct:55,color:"#F59E0B"},{name:"ANOVA",pct:35,color:"#EF4444"},{name:"Confidence Intervals",pct:48,color:"#F59E0B"}],
+    readiness:72, gap:{concept:"ANOVA interpretation",src:"Lecture 7",quiz:"Quiz 3 in 4 days",score:"1/4",why:"heavily weighted on final"},
+    files:["📊 Lectures 1-7.pptx","📄 Syllabus.pdf","📄 Practice Midterm.pdf"] },
+  cs: { name:"Data Structures", code:"CS 201", week:9, color:"#6366F1",
+    topics:[{name:"Arrays & Lists",pct:90,color:"#10B981"},{name:"Trees & BST",pct:78,color:"#10B981"},{name:"Hash Tables",pct:62,color:"#F59E0B"},{name:"Graphs",pct:40,color:"#EF4444"},{name:"Dynamic Programming",pct:28,color:"#EF4444"}],
+    readiness:58, gap:{concept:"BFS vs DFS",src:"Lecture 14",quiz:"Lab 5 due Friday",score:"2/5",why:"core for final project"},
+    files:["📄 Syllabus.pdf","📊 Lectures.pptx"] },
+  econ: { name:"Microeconomics", code:"ECON 101", week:7, color:"#EC4899",
+    topics:[{name:"Supply & Demand",pct:88,color:"#10B981"},{name:"Elasticity",pct:75,color:"#10B981"},{name:"Market Structures",pct:65,color:"#F59E0B"},{name:"Game Theory",pct:52,color:"#F59E0B"}],
+    readiness:70, gap:{concept:"Nash Equilibrium",src:"Lecture 12",quiz:"Midterm 2 next week",score:"2/4",why:"appears on midterm"},
+    files:["📄 Syllabus.pdf","📊 Notes.pdf"] }
+};
+
+const modeInfo = {
+  learning:{label:"Learning",color:"#0D9488",bg:"#E6FFFA",desc:"Explains concepts, won't give assignment answers"},
+  review:{label:"Review",color:"#F59E0B",bg:"#FEF3C7",desc:"Reviews graded work in depth"},
+  practice:{label:"Practice",color:"#1A2744",bg:"#EEF2FF",desc:"Generates targeted practice questions"}
+};
+
+let currentCourse = 'stat';
+let currentMode = 'learning';
+let currentTab = 'dash';
+let uploadedFiles = [];
+let prefs = {simpler:true,translate:true,audio:false,visual:true};
+
+function closeSetup(){ document.getElementById('setup-modal').style.display='none'; }
+function togglePref(el,key){
+  prefs[key]=!prefs[key];
+  el.className = 'pref-btn '+(prefs[key]?'on':'off');
+  el.querySelector('.check').textContent = prefs[key]?'✓':'';
+}
+
+function openModal(type){ document.getElementById('modal-'+type).classList.remove('hidden'); }
+function closeModal(type){ document.getElementById('modal-'+type).classList.add('hidden'); }
+
+function toggleCourseMenu(){ document.getElementById('course-menu').classList.toggle('open'); }
+
+function switchCourse(id,e){
+  if(e) e.stopPropagation();
+  currentCourse=id;
+  document.getElementById('course-menu').classList.remove('open');
+  document.querySelectorAll('.course-opt').forEach(o=>{o.classList.toggle('active',o.dataset.id===id);});
+  updateUI();
+}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));
+  document.getElementById('tab-'+tab).classList.remove('hidden');
+  document.getElementById('tab-'+tab).style.animation='fadeIn 0.3s ease';
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  if(tab==='tutor') renderChat();
+  if(tab==='files') renderFiles();
+  if(tab==='alerts') renderAlerts();
+}
+
+function switchMode(mode,btn){
+  currentMode=mode;
+  const m=modeInfo[mode];
+  document.querySelectorAll('.mode-btn').forEach(b=>{b.classList.remove('active');b.style.color='#64748B';b.style.borderColor='transparent';b.style.background='none';});
+  btn.classList.add('active');btn.style.color=m.color;btn.style.borderColor=m.color;btn.style.background=m.bg;
+  document.getElementById('mode-badge').style.background=m.bg;
+  document.getElementById('mode-badge').style.color=m.color;
+  document.getElementById('mode-badge').textContent=m.label.toUpperCase();
+  if(currentTab==='tutor'){
+    document.getElementById('tutor-mode-bar').style.background=m.bg;
+    document.getElementById('tutor-mode-label').style.color=m.color;
+    document.getElementById('tutor-mode-label').textContent=m.label;
+    document.getElementById('tutor-mode-desc').textContent='— '+m.desc;
+    document.querySelector('#tutor-mode-bar div').style.background=m.color;
+    renderChat();
+  }
+}
+
+function updateUI(){
+  const c=courses[currentCourse];
+  document.getElementById('course-name').textContent=c.name;
+  document.getElementById('course-dot').style.background=c.color;
+  document.querySelector('.topbar').style.borderBottomColor=c.color;
+  document.querySelectorAll('.nav-btn.active').forEach(b=>b.style.borderLeftColor=c.color);
+  document.getElementById('dash-course-info').textContent=c.name+' • Week '+c.week;
+  // Readiness
+  const circ=2*Math.PI*24;
+  document.getElementById('readiness-ring').setAttribute('stroke-dashoffset', circ*(1-c.readiness/100));
+  document.getElementById('readiness-ring').setAttribute('stroke', c.readiness>=70?'#10B981':'#F59E0B');
+  document.getElementById('readiness-num').textContent=c.readiness+'%';
+  document.getElementById('readiness-num').setAttribute('fill', c.readiness>=70?'#10B981':'#F59E0B');
+  // Recovery
+  document.getElementById('recovery-source').textContent='📘 '+c.gap.src+' check • '+c.gap.concept;
+  document.getElementById('recovery-text').innerHTML='Scored <strong style="color:#EF4444">'+c.gap.score+'</strong> — '+c.gap.why+'. '+c.gap.quiz+'.';
+  // Topics
+  renderTopics('dash-topics',c.topics,false);
+  renderTopics('map-topics',c.topics,true);
+  document.getElementById('tutor-title').textContent='AI Tutor — '+c.code;
+  document.getElementById('map-title').textContent='Knowledge Map — '+c.code;
+}
+
+function renderTopics(containerId,topics,detailed){
+  const el=document.getElementById(containerId);
+  el.innerHTML='';
+  topics.forEach(t=>{
+    const status=t.pct>=70?'Strong':t.pct>=50?'Review':'Focus';
+    const statusClass=t.pct>=70?'tag-green':t.pct>=50?'tag-amber':'tag-red';
+    if(detailed){
+      el.innerHTML+=`<div class="card" style="border-left:3px solid ${t.color};margin-bottom:7px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:600;color:#1E293B">${t.name}</span>
+          <span style="font-size:16px;font-weight:700;color:${t.color}">${t.pct}%</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${t.pct}%;background:${t.color}"></div></div>
+      </div>`;
+    } else {
+      el.innerHTML+=`<div class="bar-row">
+        <div class="bar-label"><span class="bar-name">${t.name}</span><span class="tag ${statusClass}">${status}</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${t.pct}%;background:${t.color}"></div></div>
+      </div>`;
+    }
+  });
+}
+
+function renderChat(){
+  const c=courses[currentCourse];
+  const m=modeInfo[currentMode];
+  const area=document.getElementById('chat-area');
+  area.innerHTML='';
+  const msgs=[
+    {from:'user',text:'Help me with '+c.gap.concept},
+    {from:'ai',text:'I can help you understand '+c.gap.concept+' from '+c.gap.src+'.\n\nCurrently in '+m.label+' Mode — '+m.desc+'.\n\nWhat part are you struggling with?'},
+    {from:'user',text:'Can you explain it more simply?'},
+    {from:'ai',text:'Sure! Here\'s a simpler way to think about '+c.gap.concept+'...\n\nThis was covered in '+c.gap.src+' and is '+c.gap.why+'. Would you like to try a practice question?'},
+  ];
+  let i=0;
+  function addMsg(){
+    if(i>=msgs.length) return;
+    const msg=msgs[i];
+    const div=document.createElement('div');
+    div.className='msg '+(msg.from==='user'?'user':'ai');
+    div.style.animation='fadeIn 0.4s ease';
+    let badge='';
+    if(msg.from==='ai') badge='<div style="font-size:7px;font-weight:600;color:'+m.color+';background:'+m.bg+';padding:1px 4px;border-radius:2px;display:inline-block;margin-bottom:3px;text-transform:uppercase">'+m.label+'</div><br>';
+    div.innerHTML='<div class="bubble">'+badge+msg.text+'</div>';
+    area.appendChild(div);
+    area.scrollTop=area.scrollHeight;
+    i++;
+    if(i<msgs.length) setTimeout(addMsg,700);
+  }
+  addMsg();
+}
+
+function sendChat(){
+  const input=document.getElementById('chat-input-field');
+  if(!input.value.trim()) return;
+  const area=document.getElementById('chat-area');
+  const div=document.createElement('div');
+  div.className='msg user';div.style.animation='fadeIn 0.3s ease';
+  div.innerHTML='<div class="bubble">'+input.value+'</div>';
+  area.appendChild(div);
+  input.value='';
+  area.scrollTop=area.scrollHeight;
+}
+
+function renderFiles(){
+  const c=courses[currentCourse];
+  const tabs=document.getElementById('file-course-tabs');
+  tabs.innerHTML='';
+  Object.entries(courses).forEach(([id,co])=>{
+    tabs.innerHTML+=`<button class="ctab ${id===currentCourse?'active':''}" onclick="switchCourse('${id}');renderFiles()" style="${id===currentCourse?'border-bottom-color:'+co.color+';color:'+co.color:''}">${co.code}</button>`;
+  });
+  const chips=document.getElementById('file-chips');
+  chips.innerHTML='';
+  [...c.files,...uploadedFiles].forEach(f=>{chips.innerHTML+=`<span class="chip">${f}</span>`;});
+}
+
+function simulateUpload(){
+  uploadedFiles.push('📄 Upload_'+Math.random().toString(36).substr(2,4)+'.pdf');
+  renderFiles();
+}
+
+function renderAlerts(){
+  const c=courses[currentCourse];
+  const el=document.getElementById('alerts-list');
+  el.innerHTML=[
+    {icon:'🔴',title:c.gap.concept+' Gap',text:'Scored '+c.gap.score+'. '+c.gap.quiz+'.',time:'Today'},
+    {icon:'📝',title:'Check Available',text:c.gap.src+' has a 2-min comprehension check.',time:'5h ago'},
+    {icon:'✅',title:'Progress',text:c.topics[1].name+' improved to '+c.topics[1].pct+'%.',time:'1d ago'},
+  ].map(a=>`<div class="alert-item"><span class="icon">${a.icon}</span><div style="flex:1"><div style="display:flex;justify-content:space-between"><span class="title">${a.title}</span><span class="time">${a.time}</span></div><p>${a.text}</p></div></div>`).join('');
+}
+
+function buildStreak(){
+  const grid=document.getElementById('streak-grid');
+  grid.innerHTML='';
+  const labels=document.createElement('div');labels.className='streak-labels';
+  ['','M','','W','','F',''].forEach(d=>{const l=document.createElement('div');l.textContent=d;labels.appendChild(l);});
+  grid.appendChild(labels);
+  const colors=['#E2E8F0','#99F6E4','#14B8A6','#0D9488'];
+  for(let w=0;w<12;w++){
+    const col=document.createElement('div');col.className='streak-col';
+    for(let d=0;d<7;d++){
+      const cell=document.createElement('div');cell.className='streak-cell';
+      const isFuture=w===11&&d>3;
+      cell.style.background=isFuture?'#E2E8F0':colors[Math.floor(Math.random()*4)];
+      col.appendChild(cell);
+    }
+    grid.appendChild(col);
+  }
+}
+
+// Init
+buildStreak();
+updateUI();
+renderFiles();
+</script>
+</body>
+</html>
